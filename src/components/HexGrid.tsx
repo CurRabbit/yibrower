@@ -13,12 +13,22 @@ interface GuaCardProps {
   index: number;
 }
 
+type CardVariant = 'gateway' | 'balanced' | 'recessive';
+
+function getCardVariant(gua: GuaBase): CardVariant {
+  const yangCount = (gua.binary.match(/1/g) || []).length;
+  if (yangCount >= 5) return 'gateway';    // 刚健
+  if (yangCount <= 2) return 'recessive';  // 柔顺
+  return 'balanced';                         // 均衡
+}
+
 function GuaCard({ gua, onSelect, index }: GuaCardProps) {
   const key = getGuaKey(gua);
   const wuxingColor = WX_COLOR[gua.wuxing];
   const wuxingBg = WX_BG[gua.wuxing];
   const guaKey = key;
   const imageSrc = `/yi/assets/${guaKey}/images/${guaKey}.png`;
+  const variant = getCardVariant(gua);
 
   // 卦象渲染：1=阳爻（实线），0=阴爻（断线）
   const yaoLines = gua.binary.split('').map((b, i) => ({
@@ -41,9 +51,14 @@ function GuaCard({ gua, onSelect, index }: GuaCardProps) {
         style={{
           background: `linear-gradient(160deg, ${wuxingBg.replace('0.12', '0.18')}, rgba(22,18,14,0.98))`,
           border: `1px solid ${wuxingBg.replace('0.12', '0.35')}`,
+          borderTop: variant === 'gateway' ? `2px solid ${wuxingColor}` : undefined,
+          borderLeft: variant === 'recessive' ? `2px dashed ${wuxingColor}50` : undefined,
           boxShadow: 'var(--shadow-card)',
           borderRadius: '12px',
-          transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
+          transition: 'border-color 0.3s ease, box-shadow 0.3s ease, border-top 0.3s ease, border-left 0.3s ease',
+          ...(variant === 'balanced' && {
+            background: `linear-gradient(135deg, ${wuxingBg.replace('0.12', '0.10')}, rgba(22,18,14,0.96))`,
+          }),
         }}
       >
         {/* Image area */}

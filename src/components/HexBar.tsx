@@ -4,6 +4,15 @@ import type { GuaBase } from '@/lib/types';
 import { getGuaKey } from '@/components/HexGrid';
 import { WX_COLOR } from '@/data/wuxing-map';
 
+type CardVariant = 'gateway' | 'balanced' | 'recessive';
+
+function getCardVariant(gua: GuaBase): CardVariant {
+  const yangCount = (gua.binary.match(/1/g) || []).length;
+  if (yangCount >= 5) return 'gateway';
+  if (yangCount <= 2) return 'recessive';
+  return 'balanced';
+}
+
 interface HexBarProps {
   gua: GuaBase;
   className?: string;
@@ -13,14 +22,17 @@ export default function HexBar({ gua, className = '' }: HexBarProps) {
   const key = getGuaKey(gua);
   const wuxingColor = WX_COLOR[gua.wuxing];
   const imageSrc = `/yi/assets/${key}/images/${key}.png`;
+  const variant = getCardVariant(gua);
 
   return (
     <div
-      className={`rounded-2xl overflow-hidden ${className}`}
+      className={`rounded-xl overflow-hidden ${className}`}
       style={{
         background: 'rgba(255,255,255,0.02)',
         border: `1px solid ${wuxingColor}20`,
         boxShadow: `0 0 20px ${wuxingColor}10, inset 0 0 20px ${wuxingColor}05`,
+        borderTop: variant === 'gateway' ? `2px solid ${wuxingColor}` : undefined,
+        borderBottom: variant === 'recessive' ? `2px dashed ${wuxingColor}40` : undefined,
       }}
     >
       {/* Gua name */}
