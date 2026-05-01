@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0f0d0b;
+  --surface: #1a1714;
+  --surface-2: #242018;
+  --elevated: #2e2820;
+  --border: rgba(200, 180, 120, 0.08);
+  --border-mid: rgba(200, 180, 120, 0.14);
+  --border-gold: rgba(200, 150, 30, 0.30);
+  --ink: #e8dcc8;
+  --ink-light: #a89878;
+  --ink-faint: #6b5d4d;
+  --vermilion: #c84028;
+  --vermilion-soft: rgba(200, 64, 40, 0.12);
+  --gold: #c8961e;
+  --gold-bright: #e8b840;
+  --gold-pale: #f0d880;
+  --gold-dim: #8b6914;
+  --wx-jin: #c8961e;
+  --wx-mu: #5a8c5a;
+  --wx-shui: #4a7c9b;
+  --wx-huo: #b84a2d;
+  --wx-tu: #7a6c3a;
+  --atm-color: #c8961e;
+  --atm-glow: rgba(200, 150, 30, 0.12);
+  --atm-bg: rgba(200, 150, 30, 0.04);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(200, 150, 30, 0.06);
+  --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 150, 30, 0.18);
+}
+
+body[data-wx="jin"]  { --atm-color: #c8961e; --atm-glow: rgba(200,150,30,0.18);  --atm-bg: rgba(200,150,30,0.06); }
+body[data-wx="mu"]   { --atm-color: #5a8c5a; --atm-glow: rgba(90,140,90,0.22);  --atm-bg: rgba(90,140,90,0.07); }
+body[data-wx="shui"] { --atm-color: #4a7c9b; --atm-glow: rgba(74,124,155,0.22); --atm-bg: rgba(74,124,155,0.07); }
+body[data-wx="huo"]  { --atm-color: #b84a2d; --atm-glow: rgba(184,74,45,0.22);  --atm-bg: rgba(184,74,45,0.07); }
+body[data-wx="tu"]   { --atm-color: #7a6c3a; --atm-glow: rgba(122,108,58,0.22); --atm-bg: rgba(122,108,58,0.07); }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 0%, var(--atm-glow) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 100%, var(--atm-bg) 0%, transparent 50%);
+  color: var(--ink);
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'SimSun', serif;
+  min-height: 100vh;
+  line-height: 1.6;
+  transition: background-image 0.6s ease;
+}
+
+/* 默认全选状态（无 data-wx 时）：中性暖灰，无彩色氛围光晕 */
+body:not([data-wx]) {
+  --atm-color: #8a7a6a;
+  --atm-glow: rgba(138,122,106,0.06);
+  --atm-bg: rgba(138,122,106,0.02);
+}
+
+/* 全选时侧边金线也用中性色（不受 :root 默认金色影响）*/
+body:not([data-wx])::before,
+body:not([data-wx])::after {
+  opacity: 0.08;
+}
+
+/* Left/right gold accent lines */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  pointer-events: none;
+  z-index: 1000;
+  transition: background 0.6s ease, opacity 0.6s ease;
+}
+body::before {
+  left: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--atm-color) 30%,
+    var(--atm-color) 50%,
+    var(--atm-color) 70%,
+    transparent
+  );
+  opacity: 0.15;
+}
+body::after {
+  right: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--atm-color) 30%,
+    var(--atm-color) 50%,
+    var(--atm-color) 70%,
+    transparent
+  );
+  opacity: 0.15;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gua-card-enter {
+  animation: fadeInUp 0.35s ease-out forwards;
+}
+
+@keyframes trigramPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(212,168,67,0.30), 0 0 20px rgba(212,168,67,0.12);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(212,168,67,0.50), 0 0 30px rgba(212,168,67,0.20);
+  }
+}
+
+@keyframes goldLineGlow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-content-enter {
+  animation: fadeSlideIn 0.25s ease-out forwards;
+}

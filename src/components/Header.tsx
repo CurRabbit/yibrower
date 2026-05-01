@@ -1,0 +1,101 @@
+'use client';
+
+import SearchBar from '@/components/SearchBar';
+import WuxingFilter from '@/components/WuxingFilter';
+import PositionFilter from '@/components/PositionFilter';
+
+interface HeaderProps {
+  searchValue: string;
+  onSearchChange: (v: string) => void;
+  wuxingActive: string;
+  onWuxingChange: (v: string) => void;
+  positionActive: string;
+  onPositionChange: (v: string) => void;
+  trigramActive: string;
+  onTrigramChange: (b: string) => void;
+  totalGuas?: number;
+}
+
+export default function Header({
+  searchValue,
+  onSearchChange,
+  wuxingActive,
+  onWuxingChange,
+  positionActive,
+  onPositionChange,
+  trigramActive,
+  onTrigramChange,
+  totalGuas = 64,
+}: HeaderProps) {
+  return (
+    <header
+      className="sticky top-0 z-50 flex items-center gap-3 flex-wrap relative"
+      style={{
+        padding: '10px 24px',
+        background: 'rgba(13,10,7,0.88)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(180,150,80,0.08)',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.3)',
+      }}
+    >
+      {/* Gradient fade line at bottom */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, rgba(212,168,67,0.4) 20%, rgba(212,168,67,0.5) 50%, rgba(212,168,67,0.4) 80%, transparent 100%)',
+          animation: wuxingActive !== 'all' || positionActive !== 'all'
+            ? 'goldLineGlow 2s ease-in-out infinite'
+            : 'none',
+          boxShadow: wuxingActive !== 'all' || positionActive !== 'all'
+            ? '0 0 8px rgba(212,168,67,0.4)'
+            : 'none',
+          transition: 'box-shadow 0.5s ease',
+        }}
+      />
+
+      {/* Logo mark */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-all duration-300 hover:scale-105"
+          style={{
+            background: 'linear-gradient(135deg, rgba(212,168,67,0.25), rgba(212,168,67,0.08))',
+            border: '1px solid rgba(212,168,67,0.3)',
+            color: 'var(--gold-bright)',
+            boxShadow: '0 0 10px rgba(212,168,67,0.15)',
+          }}
+        >
+          ☷
+        </div>
+        <span
+          className="text-sm font-bold leading-none"
+          style={{
+            color: 'var(--gold-bright)',
+            textShadow: '0 0 15px rgba(212,168,67,0.3)',
+            letterSpacing: '0.08em',
+          }}
+        >
+          易经
+        </span>
+      </div>
+
+      <SearchBar value={searchValue} onChange={onSearchChange} />
+      <WuxingFilter active={wuxingActive} onChange={onWuxingChange} />
+      <PositionFilter
+        active={positionActive}
+        onChange={onPositionChange}
+        trigram={trigramActive}
+        onTrigramChange={onTrigramChange}
+      />
+
+      <span
+        className="ml-auto text-xs flex-shrink-0"
+        style={{
+          color: 'var(--ink-faint)',
+          letterSpacing: '0.1em',
+        }}
+      >
+        {totalGuas} 卦
+      </span>
+    </header>
+  );
+}
