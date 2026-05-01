@@ -40,11 +40,11 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
 
   return (
     <div
-      className={`relative w-full max-w-5xl rounded-3xl overflow-hidden ${className}`}
+      className={`relative w-full max-w-5xl rounded-2xl overflow-hidden ${className}`}
       style={{
         background: 'linear-gradient(160deg, #1e1915 0%, #161210 100%)',
-        border: '1px solid rgba(212,168,67,0.22)',
-        boxShadow: '0 32px 100px rgba(0,0,0,0.85), 0 0 80px rgba(212,168,67,0.08), inset 0 1px 0 rgba(212,168,67,0.1)',
+        border: `1px solid ${wuxingColor}25`,
+        boxShadow: `0 32px 100px rgba(0,0,0,0.85), 0 0 60px ${wuxingColor}08, inset 0 1px 0 ${wuxingColor}15`,
         animation: 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
       onClick={(e) => e.stopPropagation()}
@@ -65,7 +65,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
         <div className="flex items-center gap-5">
           {/* Gua image */}
           <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden"
+            className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden"
             style={{ background: wuxingBg, border: `1px solid ${wuxingBg.replace('0.12', '0.3')}` }}
           >
             <img
@@ -99,7 +99,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
         <div className="flex items-center gap-3">
           <button
             onClick={onImmersion}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all hover:opacity-90"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all hover:opacity-90"
             style={{
               background: 'linear-gradient(135deg, #b83a28, #8c2a1a)',
               color: '#fff',
@@ -110,7 +110,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
           </button>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-lg transition-colors"
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-colors"
             style={{
               background: 'rgba(255,255,255,0.05)',
               color: 'var(--ink-faint)',
@@ -143,7 +143,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
 
           {/* Wuxing accent */}
           <div
-            className="rounded-xl p-3 text-center"
+            className="rounded-lg p-3 text-center"
             style={{
               background: `${wuxingColor}0a`,
               border: `1px solid ${wuxingColor}20`,
@@ -164,7 +164,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm transition-all"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm transition-all"
                 style={
                   activeTab === tab.key
                     ? {
@@ -187,7 +187,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
 
           {/* Tab content */}
           <div
-            className="flex-1 rounded-2xl overflow-hidden tab-content-enter"
+            className="flex-1 rounded-xl overflow-hidden tab-content-enter"
             style={{
               background: 'rgba(10,8,6,0.7)',
               border: `1px solid ${wuxingColor}12`,
@@ -205,7 +205,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
 function RelationTag({ label, num, name, color }: { label: string; num?: number; name?: string; color: string }) {
   return (
     <div
-      className="flex items-center justify-between px-3 py-1.5 rounded-xl text-sm"
+      className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm"
       style={{
         background: `${color}0a`,
         border: `1px solid ${color}20`,
@@ -279,82 +279,83 @@ function TabContent({ gua, activeTab, wuxingColor }: { gua: GuaBase; activeTab: 
   }
 
   if (activeTab === 'yaoci') {
-    const upper = gua.yaoci.slice(0, 3); // 初、二、三
-    const lower = gua.yaoci.slice(3, 6); // 四、五、上
+    // 爻辞排列：初→二→三→四→五→上（从下往上）
+    // 左列：初三五（阳爻）| 右列：初二四六（阴爻）— 视觉平衡
+    const yaoList = gua.yaoci; // index 0=初, 1=二, ..., 5=上
+    const leftColumn = [yaoList[0], yaoList[2], yaoList[4]]; // 初、三、五
+    const rightColumn = [yaoList[1], yaoList[3], yaoList[5]]; // 二、四、六
 
     return (
       <div className="h-full flex flex-col">
-        {/* Section labels */}
-        <div className="flex px-6 pt-5 pb-3 gap-4">
-          <div className="flex-1 text-center">
-            <span className="text-[10px] tracking-widest text-ink-faint">下卦 · 内</span>
-            <div
-              className="mt-1 mx-auto w-8 h-px"
-              style={{ background: `${wuxingColor}30` }}
-            />
-          </div>
-          <div className="w-px" style={{ background: `${wuxingColor}15` }} />
-          <div className="flex-1 text-center">
-            <span className="text-[10px] tracking-widest text-ink-faint">上卦 · 外</span>
-            <div
-              className="mt-1 mx-auto w-8 h-px"
-              style={{ background: `${wuxingColor}30` }}
-            />
-          </div>
-        </div>
+        {/* 五行顶边装饰条 */}
+        <div
+          className="h-0.5 mx-6 mt-5 rounded-full"
+          style={{
+            background: `linear-gradient(to right, transparent, ${wuxingColor}60, ${wuxingColor}40, transparent)`,
+          }}
+        />
 
-        {/* Yaoci rows — two columns */}
-        <div className="flex-1 flex gap-0 px-5 pb-5 overflow-auto">
-          {/* Lower (inner) */}
-          <div className="flex-1 flex flex-col gap-2 pr-3">
-            {lower.map((text, i) => (
+        {/* 六爻列 — 从上到下：五、上、四、三、二、初 */}
+        <div className="flex-1 flex gap-4 px-6 pb-5 pt-4">
+          {/* Upper (outer) — 五、上、四 */}
+          <div className="flex-1 flex flex-col gap-2">
+            {[
+              { label: '五', text: yaoList[4], yang: gua.binary[4] === '1' },
+              { label: '上', text: yaoList[5], yang: gua.binary[5] === '1' },
+              { label: '四', text: yaoList[3], yang: gua.binary[3] === '1' },
+            ].map(({ label, text, yang }) => (
               <div
-                key={i}
-                className="flex items-start gap-2.5 p-2.5 rounded-xl transition-all"
+                key={label}
+                className="flex items-start gap-2.5 p-3 rounded-lg"
                 style={{
-                  background: `${wuxingColor}08`,
-                  border: `1px solid ${wuxingColor}15`,
+                  borderLeft: `2px ${yang ? 'solid' : 'dashed'} ${wuxingColor}50`,
+                  background: yang ? `${wuxingColor}06` : 'rgba(255,255,255,0.02)',
                 }}
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                  className="w-6 h-6 rounded flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5"
                   style={{
-                    background: `${wuxingColor}15`,
+                    background: `${wuxingColor}18`,
                     color: wuxingColor,
                     border: `1px solid ${wuxingColor}30`,
                   }}
                 >
-                  {YAO_LABELS[3 + i]}
+                  {label}
                 </div>
-                <p className="text-[13px] leading-[1.75] text-ink-light">{text}</p>
+                <p className="text-[13px] leading-[1.8] text-ink-light">{text}</p>
               </div>
             ))}
           </div>
 
-          <div className="w-px self-stretch my-2" style={{ background: `${wuxingColor}10` }} />
+          {/* Divider */}
+          <div className="w-px self-stretch rounded-full" style={{ background: `${wuxingColor}12` }} />
 
-          {/* Upper (outer) */}
-          <div className="flex-1 flex flex-col gap-2 pl-3">
-            {upper.map((text, i) => (
+          {/* Lower (inner) — 三、二、初 */}
+          <div className="flex-1 flex flex-col gap-2">
+            {[
+              { label: '三', text: yaoList[2], yang: gua.binary[2] === '1' },
+              { label: '二', text: yaoList[1], yang: gua.binary[1] === '1' },
+              { label: '初', text: yaoList[0], yang: gua.binary[0] === '1' },
+            ].map(({ label, text, yang }) => (
               <div
-                key={i}
-                className="flex items-start gap-2.5 p-2.5 rounded-xl transition-all"
+                key={label}
+                className="flex items-start gap-2.5 p-3 rounded-lg"
                 style={{
-                  background: `${wuxingColor}08`,
-                  border: `1px solid ${wuxingColor}15`,
+                  borderLeft: `2px ${yang ? 'solid' : 'dashed'} ${wuxingColor}50`,
+                  background: yang ? `${wuxingColor}06` : 'rgba(255,255,255,0.02)',
                 }}
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                  className="w-6 h-6 rounded flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5"
                   style={{
-                    background: `${wuxingColor}15`,
+                    background: `${wuxingColor}18`,
                     color: wuxingColor,
                     border: `1px solid ${wuxingColor}30`,
                   }}
                 >
-                  {YAO_LABELS[2 - i]}
+                  {label}
                 </div>
-                <p className="text-[13px] leading-[1.75] text-ink-light">{text}</p>
+                <p className="text-[13px] leading-[1.8] text-ink-light">{text}</p>
               </div>
             ))}
           </div>
