@@ -11,31 +11,26 @@ jobs:
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Debug files
-        run: ls -la && ls -la backend/ && cat Dockerfile.backend
-
+        run: ls -la backend/ && cat Dockerfile.backend
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           context: .
           dockerfile: Dockerfile.backend
           push: true
-          tags: ghcr.io/currabbit/yibrower-backend:${{ github.sha }},ghcr.io/currabbit/yibrower-backend:latest
+          tags: ghcr.io/currabbit/yibrower-backend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -44,45 +39,37 @@ jobs:
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Cache node_modules
         uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
           restore-keys: ${{ runner.os }}-npm-
-
       - name: Install dependencies
         run: npm ci
-
       - name: Debug files
         run: ls -la && cat frontend/Dockerfile
-
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
           context: .
           dockerfile: Dockerfile.frontend
           push: true
-          tags: ghcr.io/currabbit/yibrower-frontend:${{ github.sha }},ghcr.io/currabbit/yibrower-frontend:latest
+          tags: ghcr.io/currabbit/yibrower-frontend:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
