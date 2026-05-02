@@ -31,9 +31,13 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: npm run build 2>&1 | tee build.log
         env:
           NODE_OPTIONS: --max-old-space-size=3072
+
+      - name: Show build log on failure
+        if: failure()
+        run: cat build.log && echo "=== last 50 lines ===" && tail -50 build.log
 
       - name: Bundle static assets
         run: tar -czf next-bundle.tar.gz .next/ public/
