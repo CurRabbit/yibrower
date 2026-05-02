@@ -112,7 +112,7 @@ if $REBUILD; then
   if [[ ! -f ".next/BUILD_ID" ]]; then
     log "⚠️  .next/BUILD_ID 不存在，强制 rebuild"
   fi
-  NODE_OPTIONS='--max-old-space-size=768' npm run build >> "$LOG" 2>&1
+  NODE_OPTIONS='--max-old-space-size=768' /root/.local/bin/npm run build >> "$LOG" 2>&1
   BUILD_EXIT=$?
   if [[ $BUILD_EXIT -ne 0 ]]; then
     log "❌ 构建失败 (exit $BUILD_EXIT)"
@@ -126,7 +126,7 @@ fi
 # 启动
 log "启动 Next.js on :3001..."
 cd "$WORKDIR"
-nohup npm run start -- -p 3001 > "$LOG" 2>&1 &
+nohup /root/.local/bin/npm run start -- -p 3001 > "$LOG" 2>&1 &
 NEW_PID=$!
 echo "$NEW_PID" > "$PID_FILE"
 log "Next.js PID=$NEW_PID"

@@ -29,8 +29,8 @@ jobs:
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          dockerfile: Dockerfile.backend
+          context: ./backend
+          dockerfile: Dockerfile
           push: true
           tags: |
             ghcr.io/currabbit/yibrower-backend:${{ github.sha }}
@@ -78,7 +78,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          dockerfile: Dockerfile.frontend
+          dockerfile: frontend/Dockerfile
           push: true
           tags: |
             ghcr.io/currabbit/yibrower-frontend:${{ github.sha }}
