@@ -6,21 +6,20 @@ import { getGuaKey } from '@/components/HexGrid';
 
 interface GalleryProps {
   gua: GuaBase;
+  imageUrls?: string[];   // 优先使用 API 返回的图片 URL，undefined 时降级到硬编码路径
   className?: string;
 }
 
-export default function Gallery({ gua, className = '' }: GalleryProps) {
+export default function Gallery({ gua, imageUrls, className = '' }: GalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const key = getGuaKey(gua);
-
-  // getGuaKey 返回完整 key 如 "gua_01_qian"，无需再加前缀
-  const guaKey = key; // e.g. "gua_01_qian"
-  const images = [
-    `/yi/assets/${guaKey}/images/${guaKey}.png`,
-    `/yi/assets/${guaKey}/images/${guaKey}_2026-04-28.png`,
-    `/yi/assets/${guaKey}/images/${guaKey}_2026-04-29.png`,
+  // imageUrls 由 GuaDetail 从 API 注入；未提供时用文件系统路径（兼容旧行为）
+  const images: string[] = imageUrls ?? [
+    `/yi/assets/${key}/images/${key}.png`,
+    `/yi/assets/${key}/images/${key}_2026-04-28.png`,
+    `/yi/assets/${key}/images/${key}_2026-04-29.png`,
   ];
 
   const prev = () => {

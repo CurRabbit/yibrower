@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { Wuxing, Position } from "@/lib/types";
 import type { GuaBase } from "@/lib/types";
 import { GUA_DATA } from "@/data/gua-data";
+import { fetchGuaList, toGuaBase } from "@/lib/api";
 import ParticleCanvas from "@/components/ParticleCanvas";
 import Header from "@/components/Header";
 import HexGrid, { getGuaKey } from "@/components/HexGrid";
@@ -11,6 +12,9 @@ import GuaDetail from "@/components/GuaDetail";
 import ImmersionView from "@/components/ImmersionView";
 
 export default function HomePage() {
+  const [guaData, setGuaData] = useState<GuaBase[] | null>(null);
+  const [apiError, setApiError] = useState(false);
+
   const [search, setSearch] = useState("");
   const [wuxing, setWuxing] = useState<Wuxing | "all">("all");
   const [position, setPosition] = useState<Position | "all">("all");
@@ -18,8 +22,27 @@ export default function HomePage() {
   const [selectedGua, setSelectedGua] = useState<GuaBase | null>(null);
   const [immersedGua, setImmersedGua] = useState<GuaBase | null>(null);
 
+  // 从 API 加载卦数据，失败时 fallback 到静态数据
+  useEffect(() => {
+    fetchGuaList()
+      .then((dtos) => {
+        const mapped = dtos.map(toGuaBase);
+        // 按卦序排序
+        mapped.sort((a, b) => a.num - b.num);
+        setGuaData(mapped);
+      })
+      .catch((err) => {
+        console.error("[HomePage] API fetch failed, using static data:", err);
+        setApiError(true);
+        setGuaData(null);
+      });
+  }, []);
+
+  // 优先用 API 数据，失败时用静态数据
+  const sourceData = guaData ?? GUA_DATA;
+
   const filtered = useMemo(() => {
-    return GUA_DATA.filter((g) => {
+    return sourceData.filter((g) => {
       const matchWx = wuxing === "all" || g.wuxing === wuxing;
       const q = search.trim().toLowerCase();
       const matchSearch =
@@ -41,10 +64,10 @@ export default function HomePage() {
       }
       return matchWx && matchSearch && matchPos;
     });
-  }, [search, wuxing, position, trigram]);
+  }, [sourceData, search, wuxing, position, trigram]);
 
   function handleSelect(key: string) {
-    const gua = GUA_DATA.find((g) => getGuaKey(g) === key);
+    const gua = sourceData.find((g) => getGuaKey(g) === key);
     if (gua) setSelectedGua(gua);
   }
 
@@ -89,15 +112,17 @@ export default function HomePage() {
 
   function handlePrev() {
     if (!immersedGua) return;
-    const idx = GUA_DATA.findIndex((g) => g.num === immersedGua.num);
-    if (idx > 0) setImmersedGua(GUA_DATA[idx - 1]);
+    const idx = sourceData.findIndex((g) => g.num === immersedGua.num);
+    if (idx > 0) setImmersedGua(sourceData[idx - 1]);
   }
 
   function handleNext() {
     if (!immersedGua) return;
-    const idx = GUA_DATA.findIndex((g) => g.num === immersedGua.num);
-    if (idx < GUA_DATA.length - 1) setImmersedGua(GUA_DATA[idx + 1]);
+    const idx = sourceData.findIndex((g) => g.num === immersedGua.num);
+    if (idx < sourceData.length - 1) setImmersedGua(sourceData[idx + 1]);
   }
+
+  const isLoading = guaData === null && !apiError;
 
   return (
     <>
@@ -120,7 +145,12 @@ export default function HomePage() {
           padding: "32px max(24px, calc((100% - 1200px) / 2)) 64px",
         }}
       >
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
+            <div className="text-4xl opacity-30 animate-pulse">☷</div>
+            <p className="text-ink-faint text-sm">加载中…</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-4 opacity-20">☷</div>
             <p className="text-ink-faint text-lg">未找到匹配结果</p>
@@ -143,6 +173,7 @@ export default function HomePage() {
         >
           <GuaDetail
             gua={selectedGua}
+            guaData={sourceData}
             onClose={handleClose}
             onImmersion={handleImmersion}
           />

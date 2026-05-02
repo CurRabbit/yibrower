@@ -1,0 +1,85 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-npm
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=3072
+
+      - name: Bundle static assets
+        run: tar -czf next-bundle.tar.gz .next/ public/
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT || '22' }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          script: |
+            set -e
+            echo "=== Stopping old Next.js process ==="
+            for pid in $(ss -tlnp 2>/dev/null | grep ':3001' | grep -oP 'pid=\K\d+' | sort -u); do
+              kill -TERM "$pid" 2>/dev/null || true
+            done
+            sleep 2
+            for pid in $(ss -tlnp 2>/dev/null | grep ':3001' | grep -oP 'pid=\K\d+' | sort -u); do
+              kill -9 "$pid" 2>/dev/null || true
+            done
+
+            echo "=== Stopping old yi-api process ==="
+            for pid in $(ss -tlnp 2>/dev/null | grep ':20224' | grep -oP 'pid=\K\d+' | sort -u); do
+              kill -TERM "$pid" 2>/dev/null || true
+            done
+            sleep 1
+
+            echo "=== Extracting build bundle ==="
+            cd /root/yi-next
+            tar -xzf ~/action/next-bundle.tar.gz
+
+            echo "=== Restarting yi-api ==="
+            pkill -f "uvicorn main:app.*20224" 2>/dev/null || true
+            sleep 1
+            cd /root/yi-images-api
+            nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 20224 >> /tmp/yi-api.log 2>&1 &
+            echo "yi-api started"
+
+            echo "=== Starting Next.js ==="
+            cd /root/yi-next
+            nohup npm run start -- -p 3001 >> /tmp/yi-next.log 2>&1 &
+            echo "Next.js started"
+
+            echo "=== Health checks ==="
+            sleep 5
+            curl -sf http://localhost:20224/yi-api/health && echo " yi-api OK" || echo " yi-api FAIL"
+            curl -sf http://localhost:3001/yi/ -o /dev/null && echo " Next.js OK" || echo " Next.js FAIL"

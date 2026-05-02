@@ -1,27 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { GuaBase } from '@/lib/types';
 import { getGuaKey } from '@/components/HexGrid';
 import { WX_COLOR, WX_MAP, WX_BG } from '@/data/wuxing-map';
-import { getCuo, getZong, getRelationGua, REL_LABELS } from '@/lib/relations';
+import { getCuo, getZong, REL_LABELS } from '@/lib/relations';
+import { fetchImageList } from '@/lib/api';
 import HexBar from '@/components/HexBar';
 import Gallery from '@/components/Gallery';
 import AudioPlayer from '@/components/AudioPlayer';
 
 interface GuaDetailProps {
   gua: GuaBase;
+  guaData: GuaBase[];   // 全量数据源，用于查找关系卦
   onClose: () => void;
   onImmersion: () => void;
+  onGuaClick?: (gua: GuaBase) => void;
   className?: string;
 }
 
 type TabKey = 'guaci' | 'yaoci' | 'gallery' | 'music';
 
-const YAO_LABELS = ['初', '二', '三', '四', '五', '上'];
-
-export default function GuaDetail({ gua, onClose, onImmersion, className = '' }: GuaDetailProps) {
+export default function GuaDetail({ gua, guaData, onClose, onImmersion, onGuaClick, className = '' }: GuaDetailProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('guaci');
+  const [galleryImages, setGalleryImages] = useState<string[] | null>(null);
 
   const key = getGuaKey(gua);
   const wuxingColor = WX_COLOR[gua.wuxing];
@@ -29,7 +31,25 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
 
   const cuoNum = getCuo(gua.num);
   const zongNum = getZong(gua.num);
-  const huGua = getRelationGua(gua.num, 'hu');
+  const cuoGua = guaData.find((g) => g.num === cuoNum);
+  const zongGua = guaData.find((g) => g.num === zongNum);
+  const huGua = guaData.find((g) => {
+    return g.wuxing === gua.wuxing && g.num !== gua.num;
+  });
+
+  // 切换到图库 tab 时从 API 加载图片
+  useEffect(() => {
+    if (activeTab !== 'gallery') return;
+    setGalleryImages(null);
+    fetchImageList({ gua_num: gua.num, limit: 20 })
+      .then((records) => {
+        const urls = records
+          .filter((r) => r.status === 0)
+          .map((r) => r.storage_url ?? `/yi/assets/${r.storage_path}`);
+        if (urls.length > 0) setGalleryImages(urls);
+      })
+      .catch(() => setGalleryImages([]));
+  }, [activeTab, gua.num]);
 
   const tabs: { key: TabKey; label: string; icon: string }[] = [
     { key: 'guaci', label: '卦辞', icon: '✦' },
@@ -194,7 +214,7 @@ export default function GuaDetail({ gua, onClose, onImmersion, className = '' }:
               backdropFilter: 'blur(12px)',
             }}
           >
-            <TabContent gua={gua} activeTab={activeTab} wuxingColor={wuxingColor} />
+            <TabContent gua={gua} activeTab={activeTab} wuxingColor={wuxingColor} galleryImages={galleryImages} />
           </div>
         </div>
       </div>
@@ -217,7 +237,7 @@ function RelationTag({ label, num, name, color }: { label: string; num?: number;
   );
 }
 
-function TabContent({ gua, activeTab, wuxingColor }: { gua: GuaBase; activeTab: TabKey; wuxingColor: string }) {
+function TabContent({ gua, activeTab, wuxingColor, galleryImages }: { gua: GuaBase; activeTab: TabKey; wuxingColor: string; galleryImages: string[] | null }) {
   if (activeTab === 'guaci') {
     return (
       <div className="relative h-full flex items-center justify-center p-10">
@@ -365,9 +385,24 @@ function TabContent({ gua, activeTab, wuxingColor }: { gua: GuaBase; activeTab: 
   }
 
   if (activeTab === 'gallery') {
+    if (!galleryImages) {
+      return (
+        <div className="h-72 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+    if (galleryImages.length === 0) {
+      return (
+        <div className="h-72 flex flex-col items-center justify-center text-ink-faint gap-2">
+          <span className="text-3xl opacity-30">◈</span>
+          <p className="text-sm">暂无图片</p>
+        </div>
+      );
+    }
     return (
       <div className="p-4">
-        <Gallery gua={gua} className="w-full h-72" />
+        <Gallery gua={gua} imageUrls={galleryImages} className="w-full h-72" />
       </div>
     );
   }
