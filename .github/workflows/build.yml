@@ -26,11 +26,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug: list files
-        run: |
-          echo "=== Root files ===" && ls -la
-          echo "=== Backend files ===" && ls -la backend/
-          echo "=== Dockerfile.backend ===" && cat Dockerfile.backend
+      - name: Debug files
+        run: ls -la && ls -la backend/ && cat Dockerfile.backend
 
       - name: Build and push backend image
         uses: docker/build-push-action@v5
@@ -38,9 +35,7 @@ jobs:
           context: .
           dockerfile: Dockerfile.backend
           push: true
-          tags: |
-            ghcr.io/currabbit/yibrower-backend:${{ github.sha }}
-            ghcr.io/currabbit/yibrower-backend:latest
+          tags: ghcr.io/currabbit/yibrower-backend:${{ github.sha }},ghcr.io/currabbit/yibrower-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -57,7 +52,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -74,16 +69,13 @@ jobs:
         with:
           path: node_modules
           key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
+          restore-keys: ${{ runner.os }}-npm-
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Debug: list files
-        run: |
-          echo "=== Root files ===" && ls -la
-          echo "=== Frontend Dockerfile ===" && cat frontend/Dockerfile
+      - name: Debug files
+        run: ls -la && cat frontend/Dockerfile
 
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
@@ -91,11 +83,6 @@ jobs:
           context: .
           dockerfile: Dockerfile.frontend
           push: true
-          tags: |
-            ghcr.io/currabbit/yibrower-frontend:${{ github.sha }}
-            ghcr.io/currabbit/yibrower-frontend:latest
+          tags: ghcr.io/currabbit/yibrower-frontend:${{ github.sha }},ghcr.io/currabbit/yibrower-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            NODE_ENV=production
-            NEXT_TELEMETRY_DISABLED=1
