@@ -42,7 +42,7 @@ export default function GuaDetail({ gua, guaData, onClose, onImmersion, onGuaCli
     if (activeTab !== 'gallery') return;
     setGalleryImages(null);
     fetchImageList({ gua_num: gua.num, limit: 20 })
-      .then((records) => {
+      .then((records: { status: number; storage_url?: string; storage_path: string }[]) => {
         const urls = records
           .filter((r) => r.status === 0)
           .map((r) => r.storage_url ?? `/yi/assets/${r.storage_path}`);
