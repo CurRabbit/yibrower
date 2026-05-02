@@ -48,6 +48,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Debug build files
+        run: |
+          echo "=== root files ===" && ls -la
+          echo "=== src ===" && ls src/
+          echo "=== public ===" && ls public/
+          echo "=== package.json build ===" && cat package.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('scripts',{}))"
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
