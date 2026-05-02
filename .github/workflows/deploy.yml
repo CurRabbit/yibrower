@@ -1,0 +1,55 @@
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Build & Push Docker Images"]
+    types: [completed]
+    branches: [master]
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Prepare SSH key
+        run: |
+          cat <<< "${{ secrets.DEPLOY_KEY }}" > deploy_key
+          chmod 600 deploy_key
+          ssh-keygen -y -f deploy_key > /dev/null && echo "Key valid" || exit 1
+
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
+          set -e
+          SHA="${{ github.event.workflow_run.head_sha }}"
+
+          echo "=== Login to ghcr.io ==="
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GITHUB_ACTOR }}" --password-stdin
+
+          echo "=== Pull images ==="
+          docker pull ghcr.io/currabbit/yibrower-backend:$SHA
+          docker pull ghcr.io/currabbit/yibrower-frontend:$SHA
+
+          echo "=== Update docker-compose with SHA tags ==="
+          cd /root/yi-browser
+          # 暂时用 latest，服务器上直接 pull latest
+          # 更新 container 以新镜像重启
+          docker compose pull
+          docker compose up -d --remove-orphans
+
+          echo "=== Health check ==="
+          sleep 15
+          curl -sf http://localhost:20224/yi-api/health && echo " backend OK" || echo " backend FAIL"
+          curl -sf http://localhost:20225/yi/ -o /dev/null && echo " frontend OK" || echo " frontend FAIL"
+          echo "=== Done ==="
+          REMOTE

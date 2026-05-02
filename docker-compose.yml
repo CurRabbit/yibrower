@@ -1,0 +1,36 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: ghcr.io/currabbit/yibrower-backend:latest
+    container_name: yi-backend
+    restart: unless-stopped
+    ports:
+      - "20224:8000"
+    volumes:
+      - yi-db:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/yi-api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: ghcr.io/currabbit/yibrower-frontend:latest
+    container_name: yi-frontend
+    restart: unless-stopped
+    ports:
+      - "20225:3000"
+    environment:
+      - NEXT_PUBLIC_BASE_PATH=/yi
+      - NODE_ENV=production
+    depends_on:
+      - backend
+
+volumes:
+  yi-db:
+    driver: local

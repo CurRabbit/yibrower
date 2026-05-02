@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   assetPrefix: isDev ? '/dev/yi' : '/yi',
   trailingSlash: true,
   allowedDevOrigins: ['8.136.25.169'],
+  output: 'standalone',
 };
 
 export default nextConfig;

@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# docker
+.dockerignore
+
+# bundle artifacts (old deploy method)
+next-bundle.tar.gz
+
+# backend
+backend/__pycache__/
+backend/*.pyc
