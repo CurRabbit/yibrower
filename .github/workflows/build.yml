@@ -82,19 +82,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Deploy to Server via SSH
+      - name: Setup Deploy Key
         run: |
-          echo "${{ secrets.DEPLOY_KEY }}" > deploy_key
-          chmod 600 deploy_key
-          ssh -o StrictHostKeyChecking=no \
-              -p ${{ secrets.SERVER_SSH_PORT || 22 }} \
-              -i deploy_key \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
-          set -e
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GITHUB_ACTOR }}" --password-stdin
-          cd /root/yi-browser
-          docker compose pull
-          docker compose up -d --remove-orphans
-          docker image prune -f
-          echo "Deploy completed at $(date)"
-          REMOTE
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_SSH_PORT || 22 }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          command: |
+            set -e
+            cd /root/yi-browser
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
