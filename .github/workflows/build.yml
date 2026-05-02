@@ -1,13 +1,27 @@
-name: Build & Push Docker Images
+name: Build and Deploy
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master   # 验收完毕push → deploy only，不build
+      - dev      # 开发push → build + deploy
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'deploy mode'
+        required: true
+        default: 'full'
+        type: choice
+        options: ['full', 'deploy-only']
+
+env:
+  REGISTRY: ghcr.io/currabbit
 
 jobs:
+  # ── Build jobs: 只在 dev 分支或 workflow_dispatch(full) 时运行 ──
   build-backend:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.event.inputs.mode == 'full'
     permissions:
       contents: read
       packages: write
@@ -28,12 +42,15 @@ jobs:
           context: backend
           file: backend/Dockerfile
           push: true
-          tags: ghcr.io/currabbit/yibrower-backend:${{ github.sha }},ghcr.io/currabbit/yibrower-backend:latest
+          tags: |
+            ${{ env.REGISTRY }}/yibrower-backend:dev-${{ github.sha }}
+            ${{ env.REGISTRY }}/yibrower-backend:dev-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   build-frontend:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.event.inputs.mode == 'full'
     permissions:
       contents: read
       packages: write
@@ -71,15 +88,16 @@ jobs:
           context: .
           file: Dockerfile.frontend
           push: true
-          tags: ghcr.io/currabbit/yibrower-frontend:${{ github.sha }},ghcr.io/currabbit/yibrower-frontend:latest
+          tags: |
+            ${{ env.REGISTRY }}/yibrower-frontend:dev-${{ github.sha }}
+            ${{ env.REGISTRY }}/yibrower-frontend:dev-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           no-cache-flow: true
 
+  # ── Deploy job: 始终运行 ──
   deploy:
     runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
-    if: github.ref == 'refs/heads/master'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -98,7 +116,26 @@ jobs:
           command: |
             set -e
             cd /root/yi-browser
+            # Pull latest code (includes docker-compose.yml and any server-side changes)
             git -c core.sshCommand="ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key" pull origin master
+
+            # Determine image tag: dev branch uses dev-latest, master uses latest
+            if grep -q '"master"' /tmp/branch.txt 2>/dev/null || \
+               git rev-parse --abbrev-ref HEAD | grep -qE '^(master|main)$'; then
+              BACKEND_TAG="latest"
+              FRONTEND_TAG="latest"
+            else
+              BACKEND_TAG="dev-latest"
+              FRONTEND_TAG="dev-latest"
+            fi
+
+            # Pull images
             docker compose pull
+
+            # Recreate containers with new image
             docker compose up -d --force-recreate
+
+            # Prune dangling images
             docker image prune -f
+
+            echo "Deploy done at $(date)"
