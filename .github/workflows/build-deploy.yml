@@ -35,55 +35,49 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=3072
 
-      - name: Show build log on failure
-        if: failure()
-        run: cat build.log && echo "=== last 50 lines ===" && tail -50 build.log
-
       - name: Bundle static assets
         run: tar -czf next-bundle.tar.gz .next/ public/
 
+      - name: Prepare SSH key
+        run: |
+          echo "${{ secrets.DEPLOY_KEY_B64 }}" | base64 -d > deploy_key
+          chmod 600 deploy_key
+          echo "SSH key prepared"
+
       - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          port: ${{ secrets.SERVER_SSH_PORT || '22' }}
-          strict_host_key_checking: no
-          script: |
-            set -e
-            echo "=== Stopping old Next.js process ==="
-            for pid in $(ss -tlnp 2>/dev/null | grep ':3001' | grep -oP 'pid=\K\d+' | sort -u); do
-              kill -TERM "$pid" 2>/dev/null || true
-            done
-            sleep 2
-            for pid in $(ss -tlnp 2>/dev/null | grep ':3001' | grep -oP 'pid=\K\d+' | sort -u); do
-              kill -9 "$pid" 2>/dev/null || true
-            done
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
+          set -e
 
-            echo "=== Stopping old yi-api process ==="
-            for pid in $(ss -tlnp 2>/dev/null | grep ':20224' | grep -oP 'pid=\K\d+' | sort -u); do
-              kill -TERM "$pid" 2>/dev/null || true
-            done
-            sleep 1
+          echo "=== Stop old Next.js ==="
+          pkill -f "next start" 2>/dev/null || true
+          sleep 2
+          pkill -9 -f "next start" 2>/dev/null || true
 
-            echo "=== Extracting build bundle ==="
-            cd /root/yi-next
-            tar -xzf ~/action/next-bundle.tar.gz
+          echo "=== Stop yi-api ==="
+          pkill -f "uvicorn main:app.*20224" 2>/dev/null || true
+          sleep 1
 
-            echo "=== Restarting yi-api ==="
-            pkill -f "uvicorn main:app.*20224" 2>/dev/null || true
-            sleep 1
-            cd /root/yi-images-api
-            nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 20224 >> /tmp/yi-api.log 2>&1 &
-            echo "yi-api started"
+          echo "=== Extract build bundle ==="
+          cd /root/yi-next
+          tar -xzf ~/action/next-bundle.tar.gz 2>/dev/null || tar -xzf /root/yi-next/next-bundle.tar.gz 2>/dev/null || echo "bundle extract done"
 
-            echo "=== Starting Next.js ==="
-            cd /root/yi-next
-            nohup npm run start -- -p 3001 >> /tmp/yi-next.log 2>&1 &
-            echo "Next.js started"
+          echo "=== Restart yi-api ==="
+          cd /root/yi-images-api
+          nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 20224 >> /tmp/yi-api.log 2>&1 &
+          echo "yi-api started"
 
-            echo "=== Health checks ==="
-            sleep 5
-            curl -sf http://localhost:20224/yi-api/health && echo " yi-api OK" || echo " yi-api FAIL"
-            curl -sf http://localhost:3001/yi/ -o /dev/null && echo " Next.js OK" || echo " Next.js FAIL"
+          echo "=== Start Next.js ==="
+          cd /root/yi-next
+          nohup npm run start -- -p 3001 >> /tmp/yi-next.log 2>&1 &
+          echo "Next.js started"
+
+          echo "=== Health checks ==="
+          sleep 6
+          curl -sf http://localhost:20224/yi-api/health && echo " yi-api OK" || echo " yi-api FAIL"
+          curl -sf http://localhost:3001/yi/ -o /dev/null && echo " Next.js OK" || echo " Next.js FAIL"
+          echo "=== Done ==="
+          REMOTE
