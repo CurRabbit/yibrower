@@ -11,7 +11,9 @@ RUN npm ci
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# Create the symlink target so Next.js build resolves it correctly
+RUN mkdir -p /root/web/yi/assets && \
+    npm run build
 
 # ---- Runner ----
 FROM base AS runner
@@ -26,6 +28,10 @@ WORKDIR /app
 COPY --from=builder --chown=nextjs:nextjs /app/public ./public
 COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
+
+# Create symlink target directory with proper permissions
+RUN mkdir -p /app/root-web-yi && chown -R nextjs:nextjs /app/root-web-yi
+RUN rm -rf /app/public/assets && ln -s /app/root-web-yi /app/public/assets
 
 USER nextjs
 
