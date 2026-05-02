@@ -29,9 +29,10 @@ COPY --from=builder --chown=nextjs:nextjs /app/public ./public
 COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
 
-# Create symlink target directory with proper permissions
-RUN mkdir -p /app/root-web-yi && chown -R nextjs:nextjs /app/root-web-yi
-RUN rm -rf /app/public/assets && ln -s /app/root-web-yi /app/public/assets
+# Fix broken symlink: replace with a real directory owned by nextjs
+RUN rm -rf /app/public/assets && \
+    mkdir -p /app/public/assets && \
+    chown -R nextjs:nextjs /app/public/assets
 
 USER nextjs
 

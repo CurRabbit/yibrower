@@ -74,6 +74,7 @@ jobs:
           tags: ghcr.io/currabbit/yibrower-frontend:${{ github.sha }},ghcr.io/currabbit/yibrower-frontend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          no-cache-flow: true
 
   deploy:
     runs-on: ubuntu-latest
