@@ -1,8 +1,5 @@
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
     image: ghcr.io/currabbit/yibrower-backend:latest
     container_name: yi-backend
     restart: unless-stopped
@@ -17,9 +14,6 @@ services:
       retries: 3
 
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
     image: ghcr.io/currabbit/yibrower-frontend:latest
     container_name: yi-frontend
     restart: unless-stopped
