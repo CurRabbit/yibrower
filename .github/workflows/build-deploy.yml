@@ -35,40 +35,13 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=3072
 
-      - name: Bundle static assets
-        run: tar -czf next-bundle.tar.gz .next/ public/
-
       - name: Prepare SSH key
         run: |
           cat <<< "${{ secrets.DEPLOY_KEY }}" > deploy_key
           chmod 600 deploy_key
           ssh-keygen -y -f deploy_key && echo "Key valid" || echo "Key INVALID"
 
-      - name: Upload bundle to server
-        run: |
-          scp -o StrictHostKeyChecking=no \
-              -i deploy_key \
-              -P ${{ secrets.SERVER_SSH_PORT || '22' }} \
-              next-bundle.tar.gz \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/root/yi-next/next-bundle.tar.gz
-          echo "Bundle uploaded"
-
-      - name: Stop old services
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              -o BatchMode=yes \
-              -i deploy_key \
-              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
-          pkill -f "next start" 2>/dev/null || true
-          sleep 2
-          pkill -9 -f "next start" 2>/dev/null || true
-          pkill -f "uvicorn main:app.*20224" 2>/dev/null || true
-          sleep 1
-          echo "Old services stopped"
-          REMOTE
-
-      - name: Extract bundle
+      - name: Deploy to server via SSH
         run: |
           ssh -o StrictHostKeyChecking=no \
               -o BatchMode=yes \
@@ -76,54 +49,31 @@ jobs:
               -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
           set -e
+          echo "=== Pull latest code ==="
           cd /root/yi-next
-          ls -la next-bundle.tar.gz
-          tar -xzf next-bundle.tar.gz
-          ls .next/Static/ | head -3
-          echo "Bundle extracted OK"
-          REMOTE
-
-      - name: Start yi-api
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              -o BatchMode=yes \
-              -i deploy_key \
-              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
+          git fetch origin master
+          git reset --hard origin/master
+          echo "=== Install dependencies ==="
+          npm ci --silent
+          echo "=== Build ==="
+          npm run build
+          echo "=== Stop old services ==="
+          pkill -f "next start" 2>/dev/null || true
+          sleep 2
+          pkill -9 -f "next start" 2>/dev/null || true
+          pkill -f "uvicorn main:app.*20224" 2>/dev/null || true
+          sleep 1
+          echo "=== Start yi-api ==="
           cd /root/yi-images-api
           nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 20224 >> /tmp/yi-api.log 2>&1 &
-          echo "yi-api PID: $!"
-          sleep 2
-          ps aux | grep uvicorn | grep -v grep || echo "yi-api NOT RUNNING"
-          REMOTE
-
-      - name: Start Next.js
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              -o BatchMode=yes \
-              -i deploy_key \
-              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
+          echo "yi-api started (PID: $!)"
+          echo "=== Start Next.js ==="
           cd /root/yi-next
-          nohup npm run start -- -p 3001 >> /tmp/yi-next.log 2>&1 &
-          echo "Next.js PID: $!"
-          sleep 3
-          ps aux | grep "next start" | grep -v grep || echo "Next.js NOT RUNNING"
-          REMOTE
-
-      - name: Health check
-        run: |
+          nohup /usr/bin/node /root/yi-next/node_modules/.bin/next start -p 3001 >> /tmp/yi-next.log 2>&1 &
+          echo "Next.js started (PID: $!)"
+          echo "=== Health checks ==="
           sleep 10
-          ssh -o StrictHostKeyChecking=no \
-              -o BatchMode=yes \
-              -i deploy_key \
-              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
-              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
-          echo "=== Port check ==="
-          ss -tlnp | grep -E "3001|20224" || echo "No ports listening!"
-          echo "=== Process check ==="
-          ps aux | grep -E "next|uvicorn" | grep -v grep || echo "No processes!"
-          echo "=== Health ==="
           curl -sf http://localhost:20224/yi-api/health && echo " yi-api OK" || echo " yi-api FAIL"
           curl -sf http://localhost:3001/yi/ -o /dev/null && echo " Next.js OK" || echo " Next.js FAIL"
+          echo "=== Done ==="
           REMOTE
