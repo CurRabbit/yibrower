@@ -91,6 +91,7 @@ jobs:
               -i deploy_key \
               ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'REMOTE'
           set -e
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GITHUB_ACTOR }}" --password-stdin
           cd /root/yi-browser
           docker compose pull
           docker compose up -d --remove-orphans
