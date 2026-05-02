@@ -49,7 +49,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.SERVER_SSH_PORT || '22' }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          strict_host_key_checking: no
           script: |
             set -e
             echo "=== Stopping old Next.js process ==="
