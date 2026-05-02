@@ -44,6 +44,25 @@ jobs:
           chmod 600 deploy_key
           echo "SSH key prepared"
 
+      - name: Debug SSH key
+        run: |
+          echo "=== Key debug ==="
+          ls -la deploy_key
+          file deploy_key
+          ssh-keygen -l -f deploy_key
+          ssh-keygen -y -f deploy_key
+          echo "=== Key content (base64) ==="
+          cat deploy_key | base64 | head -c 100
+          echo ""
+          echo "=== Secret length ==="
+          echo "${{ secrets.DEPLOY_KEY_B64 }}" | wc -c
+          echo "=== Testing SSH connection ==="
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "echo connected && hostname && whoami" 2>&1 || true
       - name: Deploy to server via SSH
         run: |
           ssh -o StrictHostKeyChecking=no \
