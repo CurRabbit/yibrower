@@ -43,28 +43,48 @@ jobs:
           cat <<< "${{ secrets.DEPLOY_KEY }}" > deploy_key
           chmod 600 deploy_key
 
-      - name: Deploy to server via SSH
-        env:
-          SSH_KEY: ${{ secrets.DEPLOY_KEY }}
-          SSH_PORT: ${{ secrets.SERVER_SSH_PORT || '22' }}
-          SSH_USER: ${{ secrets.SERVER_USER }}
-          SSH_HOST: ${{ secrets.SERVER_HOST }}
+      - name: Stop old services
         run: |
-          echo "=== Deploying ==="
           ssh -o StrictHostKeyChecking=no \
               -o BatchMode=yes \
               -i deploy_key \
-              -p "$SSH_PORT" \
-              "$SSH_USER@$SSH_HOST" \
-              'echo "SSH connected"; \
-               pkill -f "next start" 2>/dev/null || true; \
-               sleep 2; \
-               pkill -9 -f "next start" 2>/dev/null || true; \
-               pkill -f "uvicorn main:app.*20224" 2>/dev/null || true; \
-               sleep 1; \
-               cd /root/yi-next && tar -xzf next-bundle.tar.gz 2>/dev/null || echo "extract done"; \
-               cd /root/yi-images-api && nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 20224 >> /tmp/yi-api.log 2>&1 & echo "yi-api PID: $!"; \
-               cd /root/yi-next && nohup npm run start -- -p 3001 >> /tmp/yi-next.log 2>&1 & echo "next PID: $!"; \
-               sleep 8; \
-               curl -sf http://localhost:20224/yi-api/health && echo " yi-api OK" || echo " yi-api FAIL"; \
-               curl -sf http://localhost:3001/yi/ -o /dev/null && echo " Next.js OK" || echo " Next.js FAIL"'
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "pkill -f 'next start' 2>/dev/null || true; sleep 2; pkill -9 -f 'next start' 2>/dev/null || true; pkill -f 'uvicorn main:app.*20224' 2>/dev/null || true; sleep 1; echo 'Old services stopped'"
+
+      - name: Extract bundle on server
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "cd /root/yi-next && tar -xzf next-bundle.tar.gz && echo 'Bundle extracted'"
+
+      - name: Start yi-api
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "cd /root/yi-images-api && nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 20224 >> /tmp/yi-api.log 2>&1 & echo 'yi-api started'"
+
+      - name: Start Next.js
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "cd /root/yi-next && nohup npm run start -- -p 3001 >> /tmp/yi-next.log 2>&1 & echo 'Next.js started'"
+
+      - name: Health check
+        run: |
+          sleep 10
+          ssh -o StrictHostKeyChecking=no \
+              -o BatchMode=yes \
+              -i deploy_key \
+              -p ${{ secrets.SERVER_SSH_PORT || '22' }} \
+              ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+              "curl -sf http://localhost:20224/yi-api/health && echo ' yi-api OK' || echo ' yi-api FAIL'; curl -sf http://localhost:3001/yi/ -o /dev/null && echo ' Next.js OK' || echo ' Next.js FAIL'"
