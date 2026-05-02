@@ -1,24 +1,6 @@
-# ---- Base ----
-FROM node:20-alpine AS base
-WORKDIR /app
+# Runner-only image — build happens in Actions
+FROM node:20-alpine
 
-# ---- Dependencies ----
-FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci
-
-# ---- Build ----
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--max-old-space-size=2048"
-
-RUN npm run build
-
-# ---- Runner ----
-FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -27,9 +9,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs \
     && adduser --system --uid 1001 nextjs
 
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy everything from Actions context (.next is pre-built there)
+COPY --chown=nextjs:nodejs . ./
 
 USER nextjs
 
