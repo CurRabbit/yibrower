@@ -26,11 +26,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Debug: list files
+        run: |
+          echo "=== Root files ===" && ls -la
+          echo "=== Backend files ===" && ls -la backend/
+          echo "=== Dockerfile.backend ===" && cat Dockerfile.backend
+
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
-          dockerfile: Dockerfile
+          context: .
+          dockerfile: Dockerfile.backend
           push: true
           tags: |
             ghcr.io/currabbit/yibrower-backend:${{ github.sha }}
@@ -74,11 +80,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Debug: list files
+        run: |
+          echo "=== Root files ===" && ls -la
+          echo "=== Frontend Dockerfile ===" && cat frontend/Dockerfile
+
       - name: Build and push frontend image
         uses: docker/build-push-action@v5
         with:
           context: .
-          dockerfile: frontend/Dockerfile
+          dockerfile: Dockerfile.frontend
           push: true
           tags: |
             ghcr.io/currabbit/yibrower-frontend:${{ github.sha }}
