@@ -21,6 +21,7 @@ export default function HomePage() {
   const [trigram, setTrigram] = useState<string>(""); // 三爻卦binary，如'111'
   const [selectedGua, setSelectedGua] = useState<GuaBase | null>(null);
   const [immersedGua, setImmersedGua] = useState<GuaBase | null>(null);
+  const [theme, setTheme] = useState<string>("default"); // 'default' | 'ink' | 'celadon' | 'vermilion'
 
   // 从 API 加载卦数据，失败时 fallback 到静态数据
   useEffect(() => {
@@ -95,6 +96,13 @@ export default function HomePage() {
     setTrigram(b);
   }
 
+  function handleThemeChange(v: string) {
+    setTheme(v);
+    if (typeof document !== 'undefined') {
+      document.body.setAttribute('data-theme', v === 'default' ? '' : v);
+    }
+  }
+
   function handleClose() {
     setSelectedGua(null);
   }
@@ -137,6 +145,8 @@ export default function HomePage() {
         trigramActive={trigram}
         onTrigramChange={handleTrigramChange}
         totalGuas={filtered.length}
+        themeActive={theme}
+        onThemeChange={handleThemeChange}
       />
       <main
         style={{

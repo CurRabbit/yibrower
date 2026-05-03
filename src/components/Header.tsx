@@ -14,6 +14,8 @@ interface HeaderProps {
   trigramActive: string;
   onTrigramChange: (b: string) => void;
   totalGuas?: number;
+  themeActive: string;
+  onThemeChange: (v: string) => void;
 }
 
 export default function Header({
@@ -26,6 +28,8 @@ export default function Header({
   trigramActive,
   onTrigramChange,
   totalGuas = 64,
+  themeActive,
+  onThemeChange,
 }: HeaderProps) {
   return (
     <header
@@ -86,6 +90,45 @@ export default function Header({
         trigram={trigramActive}
         onTrigramChange={onTrigramChange}
       />
+
+      {/* 主题切换 */}
+      <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
+        {[
+          { key: 'default',   label: '金', color: '#c8961e' },
+          { key: 'ink',        label: '墨', color: '#6b5d4d' },
+          { key: 'celadon',    label: '瓷', color: '#5a8878' },
+          { key: 'vermilion',  label: '朱', color: '#9a6840' },
+        ].map(({ key, label, color }) => {
+          const isActive = themeActive === key;
+          return (
+            <button
+              key={key}
+              onClick={() => onThemeChange(key)}
+              title={key === 'default' ? '默认金色' : key === 'ink' ? '水墨' : key === 'celadon' ? '青瓷' : '紫禁'}
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                border: isActive
+                  ? `1.5px solid ${color}`
+                  : '1px solid rgba(180,150,80,0.10)',
+                background: isActive
+                  ? `${color}18`
+                  : 'rgba(255,255,255,0.02)',
+                color: isActive ? color : 'var(--ink-faint)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: isActive ? `0 0 8px ${color}40` : 'none',
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
       <span
         className="ml-auto text-xs flex-shrink-0"

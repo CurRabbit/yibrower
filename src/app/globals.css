@@ -30,11 +30,69 @@
   --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 150, 30, 0.18);
 }
 
+/* ─── 五行氛围色（可与主题色叠加）────────────────────────── */
 body[data-wx="jin"]  { --atm-color: #c8961e; --atm-glow: rgba(200,150,30,0.18);  --atm-bg: rgba(200,150,30,0.06); }
 body[data-wx="mu"]   { --atm-color: #5a8c5a; --atm-glow: rgba(90,140,90,0.22);  --atm-bg: rgba(90,140,90,0.07); }
 body[data-wx="shui"] { --atm-color: #4a7c9b; --atm-glow: rgba(74,124,155,0.22); --atm-bg: rgba(74,124,155,0.07); }
 body[data-wx="huo"]  { --atm-color: #b84a2d; --atm-glow: rgba(184,74,45,0.22);  --atm-bg: rgba(184,74,45,0.07); }
 body[data-wx="tu"]   { --atm-color: #7a6c3a; --atm-glow: rgba(122,108,58,0.22); --atm-bg: rgba(122,108,58,0.07); }
+
+/* ─── 主题色：水墨 ─────────────────────────────────────── */
+body[data-theme="ink"] {
+  --bg:         #0d0c0a;
+  --surface:    #181614;
+  --surface-2:  #211e1a;
+  --elevated:   #2a2620;
+  --border:     rgba(160,148,128,0.07);
+  --border-mid: rgba(160,148,128,0.12);
+  --ink:        #d4ccc0;
+  --ink-light:  #9a9288;
+  --ink-faint:  #5c564e;
+  --gold:       #8a7e70;
+  --gold-bright:#a89880;
+  --gold-pale:  #c0b8a8;
+  --gold-dim:   #5e564a;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(138,126,112,0.06);
+  --shadow-hover:0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(138,126,112,0.14);
+}
+
+/* ─── 主题色：青瓷 ─────────────────────────────────────── */
+body[data-theme="celadon"] {
+  --bg:         #080f0e;
+  --surface:    #0e1a18;
+  --surface-2:  #132420;
+  --elevated:   #192e2a;
+  --border:     rgba(100,160,148,0.07);
+  --border-mid: rgba(100,160,148,0.12);
+  --ink:        #c0d8d0;
+  --ink-light:  #7a9e96;
+  --ink-faint:  #3e5c54;
+  --gold:       #5a8878;
+  --gold-bright:#7aab9e;
+  --gold-pale:  #a0c8bc;
+  --gold-dim:   #3a6050;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(90,136,120,0.06);
+  --shadow-hover:0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(90,136,120,0.14);
+}
+
+/* ─── 主题色：紫禁 ─────────────────────────────────────── */
+body[data-theme="vermilion"] {
+  --bg:         #0f0a08;
+  --surface:    #1a120e;
+  --surface-2:  #241a14;
+  --elevated:   #2e2018;
+  --border:     rgba(200,140,120,0.07);
+  --border-mid: rgba(200,140,120,0.12);
+  --ink:        #e0d0c4;
+  --ink-light:  #a88878;
+  --ink-faint:  #5c4438;
+  --gold:       #9a6840;
+  --gold-bright:#c07a48;
+  --gold-pale:  #d4a878;
+  --gold-dim:   #6a4428;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(180,120,80,0.06);
+  --shadow-hover:0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(180,120,80,0.14);
+}
 
 * {
   box-sizing: border-box;
