@@ -9,6 +9,8 @@ class GuaBase(BaseModel):
     binary: Optional[str] = None
     guaci: Optional[str] = None
     yaoci: Optional[list[str]] = None
+    xiangci: Optional[str] = None
+    tuanc: Optional[str] = None
 
 class GuaResponse(GuaBase):
     pass
